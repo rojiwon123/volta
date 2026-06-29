@@ -16,8 +16,6 @@ struct SelfTestView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text("점검").font(.subheadline)
-                Text("각 제어가 이 기기에서 실제로 동작하는지 확인")
-                    .font(.caption2).foregroundStyle(.secondary)
                 Spacer()
                 if monitor.selfTestRunning {
                     ProgressView().controlSize(.small)

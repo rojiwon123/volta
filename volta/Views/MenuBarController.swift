@@ -22,6 +22,7 @@
 //
 
 import AppKit
+import OSLog
 import SwiftUI
 import VoltaCore
 
@@ -32,6 +33,18 @@ final class MenuBarController: NSObject {
     private var statusItem: NSStatusItem!
     private let popover = NSPopover()
 
+    /// 팝오버 고정 크기. **콘텐츠 높이가 바뀌어도 팝오버는 리사이즈하지 않는다** — 이로써 "표시 레이아웃
+    /// 패스 도중 팝오버 리사이즈"라는 `_NSDetectedLayoutRecursion`의 근본 원인을 제거한다. 콘텐츠는
+    /// ContentView 안에서 ScrollView로 감싸 이 높이를 넘으면 스크롤된다(외형/폭 보존).
+    static let popoverWidth: CGFloat = 280
+    /// 풀 컨트롤(모든 기능 표시) 상태에 맞춘 고정 높이. 평소엔 스크롤 없이 다 보이고, 예외적으로 더 길면
+    /// (강제방전 게이지·점검 결과 등) 스크롤. (측정 근거: 풀 상태 콘텐츠 fittingHeight≈651[DEBUG, 프리뷰 포함].)
+    #if DEBUG
+    static let popoverHeight: CGFloat = 660   // DEBUG: 프리뷰 섹션 포함 풀 상태.
+    #else
+    static let popoverHeight: CGFloat = 600   // Release: 프리뷰 없는 풀 상태.
+    #endif
+
     init(monitor: BatteryMonitor) {
         self.monitor = monitor
         super.init()
@@ -40,28 +53,71 @@ final class MenuBarController: NSObject {
         statusItem.button?.target = self
         statusItem.button?.action = #selector(togglePopover)
 
+        // 호스팅 컨트롤러의 자동 preferredContentSize 구동을 끈다(sizingOptions=[]) → SwiftUI intrinsic
+        // 높이 변화가 팝오버 크기로 전파되지 않는다. 팝오버 크기는 우리가 고정 제어한다(아래 contentSize).
+        let hosting = NSHostingController(rootView: ContentView(monitor: monitor))
+        hosting.sizingOptions = []
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(
-            rootView: ContentView(monitor: monitor)
-        )
+        popover.contentViewController = hosting
+        popover.contentSize = NSSize(width: Self.popoverWidth, height: Self.popoverHeight)
 
         monitor.start()
         observe()   // 최초 렌더 + 변화 구독
 
         #if DEBUG
-        // [임시 검증 훅] 레이아웃 재귀 재현용 — env VOLTA_AUTOOPEN_POPOVER=1이면 런치 직후 실제
-        // 상태아이템 팝오버를 자동으로 연다(메뉴바 클릭 우회). 평소엔 비활성.
-        if ProcessInfo.processInfo.environment["VOLTA_AUTOOPEN_POPOVER"] == "1" {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                self?.togglePopover()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    print("[volta-harness] popover.isShown=\(self?.popover.isShown ?? false) "
-                        + "button=\(self?.statusItem.button != nil)")
-                }
-            }
+        // [검증 훅] 레이아웃 재귀 재현용 — env VOLTA_AUTOOPEN_POPOVER=1이면 런치 직후 팝오버를 자동으로
+        // 연 뒤 **콘텐츠 높이 변화를 반복 유발**(컨트롤/조건부 행 토글)해 표시 중 리사이즈 경로를 stress한다.
+        // 통합 로그(subsystem=com.rojiwon.volta, category=harness)로 측정 높이/진행을 남긴다. 평소엔 비활성.
+        // env 또는 플래그 파일(/tmp/volta-harness)로 트리거 — `open`(LaunchServices) 실행 시 env가 전달되지
+        // 않아도 파일 플래그로 켤 수 있게 한다.
+        if ProcessInfo.processInfo.environment["VOLTA_AUTOOPEN_POPOVER"] == "1"
+            || FileManager.default.fileExists(atPath: "/tmp/volta-harness") {
+            runLayoutHarness()
         }
         #endif
     }
+
+    #if DEBUG
+    private let harnessLog = Logger(subsystem: "com.rojiwon.volta", category: "harness")
+    private var harnessCycle = 0
+    private var harnessTimer: Timer?
+    private func runLayoutHarness() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self else { return }
+            self.togglePopover()
+            // 풀 상태 콘텐츠 높이 측정(고정 높이 결정 근거) — 같은 monitor로 별도 호스팅에 sizeThatFits.
+            let probe = NSHostingController(rootView: ContentView(monitor: self.monitor))
+            probe.view.layoutSubtreeIfNeeded()
+            let fit = probe.sizeThatFits(in: NSSize(width: 280, height: 5000))
+            let line = "fittingHeight=\(Int(fit.height.rounded())) isControlSupported=\(self.monitor.isControlSupported) popoverShown=\(self.popover.isShown)\n"
+            self.harnessLog.notice("\(line, privacy: .public)")
+            // 통합 로그가 이 환경에서 안 잡히므로 파일로도 남긴다(고정 높이 결정 근거 회수용).
+            try? line.write(toFile: "/tmp/volta-harness-out", atomically: true, encoding: .utf8)
+            // 콘텐츠 높이 변화를 반복 유발 → 표시 중 리사이즈/재귀 stress. (heat 토글=온도행/슬라이더,
+            // preview 토글=프리뷰 행. 짝수 회 토글이라 끝나면 원상복귀.)
+            self.harnessCycle = 0
+            self.harnessTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.monitor.heatProtectionEnabled.toggle()
+                    self.monitor.previewEnabled.toggle()
+                    self.harnessCycle += 1
+                    if self.harnessCycle >= 12 {
+                        self.harnessTimer?.invalidate()
+                        // stress 후 상태를 파일에 추가 — 팝오버가 고정 크기를 유지하고 여전히 표시 중이며
+                        // 크래시 없이 끝났는지 회수용. (레이아웃 재귀 경고 자체는 이 환경에서 캡처 불가.)
+                        let cs = self.popover.contentSize
+                        let done = "stressDone cycles=\(self.harnessCycle) popoverShown=\(self.popover.isShown) contentSize=\(Int(cs.width))x\(Int(cs.height))\n"
+                        self.harnessLog.notice("\(done, privacy: .public)")
+                        if let h = FileHandle(forWritingAtPath: "/tmp/volta-harness-out") {
+                            h.seekToEndOfFile(); h.write(Data(done.utf8)); try? h.close()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    #endif
 
     /// @Observable 상태 변화를 추적해 아이콘을 다시 그린다.
     private func observe() {

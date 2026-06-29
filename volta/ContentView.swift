@@ -12,6 +12,18 @@ struct ContentView: View {
     @Bindable var monitor: BatteryMonitor
 
     var body: some View {
+        // 팝오버는 고정 크기(MenuBarController). 콘텐츠 높이가 그 높이를 넘으면 여기 ScrollView가 흡수해
+        // 스크롤한다 → 콘텐츠 변화가 팝오버 리사이즈로 전파되지 않아 레이아웃 재귀가 구조적으로 안 난다.
+        ScrollView(.vertical) {
+            content
+                .padding(14)
+                .frame(width: 280, alignment: .topLeading)
+        }
+        .frame(width: 280)
+        .scrollBounceBehavior(.basedOnSize)   // 콘텐츠가 짧으면 바운스 안 함(고정 높이 빈 공간에서 덜 흔들림).
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
             Divider()
@@ -53,13 +65,9 @@ struct ContentView: View {
             Divider()
             footer
         }
-        .padding(14)
-        .frame(width: 280)
-        // ⚠️ 팝오버 열릴 때의 즉시 갱신은 여기(.task)서 하지 않는다 — 뷰 appear/레이아웃 패스 중에
-        //    monitor 상태(reading/policyState/deviceSupport)를 변이시키면 조건부 행(온도·배터리정보·
-        //    미지원 안내 등)으로 콘텐츠 높이가 바뀌고, NSHostingController가 그 레이아웃 도중 팝오버를
-        //    리사이즈해 AppKit "layoutSubtreeIfNeeded ... already being laid out" 재귀 경고가 난다.
-        //    → 갱신은 MenuBarController.togglePopover에서 표시 직후(레이아웃 패스 밖)로 미룬다.
+        // 폭만 콘텐츠에서 고정(높이는 ScrollView/팝오버 고정 크기가 흡수). 콘텐츠 변화로 팝오버가
+        // 리사이즈되지 않으므로, 과거의 "appear 중 갱신 회피" 같은 시점 우회는 더 이상 필요 없다 —
+        // 어떤 동적 콘텐츠 변화(컨트롤↔비활성화·점검·조건부 행)든 ScrollView가 재귀 없이 흡수한다.
     }
 
     // MARK: 헤더 — 현재 상태
