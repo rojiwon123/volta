@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  헬퍼(Command Line Tool) 바이너리에 임베드되는 Info.plist.
+  Xcode 빌드 설정: CREATE_INFOPLIST_SECTION_IN_BINARY = YES, INFOPLIST_FILE = voltaHelper/Info.plist
+  ⚠️ SMAppService daemon 요구 키 구성은 실기에서 검증 필요.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.rojiwon.volta.helper</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>voltaHelper</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.1.0</string>
+</dict>
+</plist>

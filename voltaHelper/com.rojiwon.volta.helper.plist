@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LaunchDaemon plist for SMAppService.daemon.
+  배치 위치(Xcode Copy Files): 앱 번들 Contents/Library/LaunchDaemons/com.rojiwon.volta.helper.plist
+  - Label / 파일명은 HelperConstants.daemonPlistName 과 일치해야 한다.
+  - MachServices 이름은 HelperConstants.machServiceName 과 일치해야 한다.
+  ⚠️ BundleProgram 상대경로/키 구성은 실기에서 검증 필요.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.rojiwon.volta.helper</string>
+
+    <key>BundleProgram</key>
+    <string>Contents/MacOS/voltaHelper</string>
+
+    <key>MachServices</key>
+    <dict>
+        <key>com.rojiwon.volta.helper.xpc</key>
+        <true/>
+    </dict>
+
+    <key>AssociatedBundleIdentifiers</key>
+    <array>
+        <string>com.rojiwon.volta</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>

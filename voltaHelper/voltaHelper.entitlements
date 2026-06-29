@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  헬퍼 entitlements.
+  - App Sandbox 미사용(SMC 특권 쓰기/IOKit user client 접근 필요).
+  - 클라이언트(앱) 검증을 위한 팀 식별. 추가 entitlement는 실기에서 확정.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 헬퍼는 sandbox 미적용. (키를 명시적으로 false로 두지 않고, 타깃에 App Sandbox capability를 추가하지 않는다.) -->
+    <!-- 필요 시 SMAppService 연동을 위한 키를 여기에 추가(검증 필요). -->
+</dict>
+</plist>
