@@ -1,0 +1,15 @@
+// Signing.xcconfig.example
+//
+// 이 파일을 Signing.xcconfig로 복사한 뒤 DEVELOPMENT_TEAM에 본인 Apple 개발 팀 ID를 넣는다.
+//   cp Signing.xcconfig.example Signing.xcconfig
+//   # Signing.xcconfig에서 DEVELOPMENT_TEAM 값을 본인 팀 ID로 교체
+//
+// 서명 팀을 "한 곳"에서 관리한다. 팀을 바꿀 때는 Signing.xcconfig의 이 한 줄만 고치면
+// 모든 타깃(앱 volta / 헬퍼 voltaHelper / 테스트)에 자동 전파된다.
+// (project.pbxproj의 흩어진 DEVELOPMENT_TEAM 설정을 이 파일로 모았다 — 프로젝트 레벨 base config.)
+//
+// ⚠️ Signing.xcconfig는 .gitignore로 추적하지 않는다(팀 ID를 repo/히스토리에 두지 않기 위함).
+// ⚠️ 런타임 XPC 팀 검증(HelperConstants/HelperListener)은 "자기 코드서명에서 팀을 런타임 파생"하므로
+//    이 값과 별개로 자동 일치한다 — 팀 전환 시 손대지 않는다.
+
+DEVELOPMENT_TEAM = YOUR_TEAM_ID

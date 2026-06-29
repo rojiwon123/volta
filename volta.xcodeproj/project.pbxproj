@@ -1,0 +1,763 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B5F121C02FDC6F0100D4E593 /* VoltaCore in Frameworks */ = {isa = PBXBuildFile; productRef = B5F121BF2FDC6F0100D4E593 /* VoltaCore */; };
+		B5F121E52FDC712600D4E593 /* VoltaCore in Frameworks */ = {isa = PBXBuildFile; productRef = B5F121E42FDC712600D4E593 /* VoltaCore */; };
+		B5F121E92FDC73AE00D4E593 /* voltaHelper in CopyFiles */ = {isa = PBXBuildFile; fileRef = B5F121D02FDC6F7F00D4E593 /* voltaHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		B5F121EC2FDC743F00D4E593 /* com.rojiwon.volta.helper.plist in CopyFiles */ = {isa = PBXBuildFile; fileRef = B5F121EB2FDC743F00D4E593 /* com.rojiwon.volta.helper.plist */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B5EC9BCD2FD72F1C00193AA5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B5EC9BB72FD72F1A00193AA5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B5EC9BBE2FD72F1A00193AA5;
+			remoteInfo = volta;
+		};
+		B5EC9BD72FD72F1C00193AA5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B5EC9BB72FD72F1A00193AA5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B5EC9BBE2FD72F1A00193AA5;
+			remoteInfo = volta;
+		};
+		B5F121E62FDC735700D4E593 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B5EC9BB72FD72F1A00193AA5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B5F121CF2FDC6F7F00D4E593;
+			remoteInfo = voltaHelper;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B5F121CE2FDC6F7F00D4E593 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		B5F121E82FDC737E00D4E593 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				B5F121E92FDC73AE00D4E593 /* voltaHelper in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5F121EA2FDC73C700D4E593 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchDaemons;
+			dstSubfolderSpec = 1;
+			files = (
+				B5F121EC2FDC743F00D4E593 /* com.rojiwon.volta.helper.plist in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		77E942E041ED47748751C1C3 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		B5EC9BBF2FD72F1A00193AA5 /* volta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volta.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5EC9BCC2FD72F1C00193AA5 /* voltaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = voltaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5EC9BD62FD72F1C00193AA5 /* voltaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = voltaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5F121D02FDC6F7F00D4E593 /* voltaHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = voltaHelper; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5F121EB2FDC743F00D4E593 /* com.rojiwon.volta.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = com.rojiwon.volta.helper.plist; path = voltaHelper/com.rojiwon.volta.helper.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B5EC9BC12FD72F1A00193AA5 /* volta */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = volta;
+			sourceTree = "<group>";
+		};
+		B5EC9BCF2FD72F1C00193AA5 /* voltaTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = voltaTests;
+			sourceTree = "<group>";
+		};
+		B5EC9BD92FD72F1C00193AA5 /* voltaUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = voltaUITests;
+			sourceTree = "<group>";
+		};
+		B5F121D12FDC6F7F00D4E593 /* voltaHelper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = voltaHelper;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B5EC9BBC2FD72F1A00193AA5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B5F121C02FDC6F0100D4E593 /* VoltaCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5EC9BC92FD72F1C00193AA5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5EC9BD32FD72F1C00193AA5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5F121CD2FDC6F7F00D4E593 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B5F121E52FDC712600D4E593 /* VoltaCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		B5EC9BB62FD72F1A00193AA5 = {
+			isa = PBXGroup;
+			children = (
+				77E942E041ED47748751C1C3 /* Signing.xcconfig */,
+				B5F121EB2FDC743F00D4E593 /* com.rojiwon.volta.helper.plist */,
+				B5EC9BC12FD72F1A00193AA5 /* volta */,
+				B5EC9BCF2FD72F1C00193AA5 /* voltaTests */,
+				B5EC9BD92FD72F1C00193AA5 /* voltaUITests */,
+				B5F121D12FDC6F7F00D4E593 /* voltaHelper */,
+				B5F121E32FDC712600D4E593 /* Frameworks */,
+				B5EC9BC02FD72F1A00193AA5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B5EC9BC02FD72F1A00193AA5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B5EC9BBF2FD72F1A00193AA5 /* volta.app */,
+				B5EC9BCC2FD72F1C00193AA5 /* voltaTests.xctest */,
+				B5EC9BD62FD72F1C00193AA5 /* voltaUITests.xctest */,
+				B5F121D02FDC6F7F00D4E593 /* voltaHelper */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B5F121E32FDC712600D4E593 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B5EC9BBE2FD72F1A00193AA5 /* volta */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B5EC9BE02FD72F1C00193AA5 /* Build configuration list for PBXNativeTarget "volta" */;
+			buildPhases = (
+				B5EC9BBB2FD72F1A00193AA5 /* Sources */,
+				B5EC9BBC2FD72F1A00193AA5 /* Frameworks */,
+				B5EC9BBD2FD72F1A00193AA5 /* Resources */,
+				B5F121E82FDC737E00D4E593 /* CopyFiles */,
+				B5F121EA2FDC73C700D4E593 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B5F121E72FDC735700D4E593 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B5EC9BC12FD72F1A00193AA5 /* volta */,
+			);
+			name = volta;
+			packageProductDependencies = (
+				B5F121BF2FDC6F0100D4E593 /* VoltaCore */,
+			);
+			productName = volta;
+			productReference = B5EC9BBF2FD72F1A00193AA5 /* volta.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B5EC9BCB2FD72F1C00193AA5 /* voltaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B5EC9BE32FD72F1C00193AA5 /* Build configuration list for PBXNativeTarget "voltaTests" */;
+			buildPhases = (
+				B5EC9BC82FD72F1C00193AA5 /* Sources */,
+				B5EC9BC92FD72F1C00193AA5 /* Frameworks */,
+				B5EC9BCA2FD72F1C00193AA5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B5EC9BCE2FD72F1C00193AA5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B5EC9BCF2FD72F1C00193AA5 /* voltaTests */,
+			);
+			name = voltaTests;
+			packageProductDependencies = (
+			);
+			productName = voltaTests;
+			productReference = B5EC9BCC2FD72F1C00193AA5 /* voltaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B5EC9BD52FD72F1C00193AA5 /* voltaUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B5EC9BE62FD72F1C00193AA5 /* Build configuration list for PBXNativeTarget "voltaUITests" */;
+			buildPhases = (
+				B5EC9BD22FD72F1C00193AA5 /* Sources */,
+				B5EC9BD32FD72F1C00193AA5 /* Frameworks */,
+				B5EC9BD42FD72F1C00193AA5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B5EC9BD82FD72F1C00193AA5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B5EC9BD92FD72F1C00193AA5 /* voltaUITests */,
+			);
+			name = voltaUITests;
+			packageProductDependencies = (
+			);
+			productName = voltaUITests;
+			productReference = B5EC9BD62FD72F1C00193AA5 /* voltaUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		B5F121CF2FDC6F7F00D4E593 /* voltaHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B5F121D42FDC6F7F00D4E593 /* Build configuration list for PBXNativeTarget "voltaHelper" */;
+			buildPhases = (
+				B5F121CC2FDC6F7F00D4E593 /* Sources */,
+				B5F121CD2FDC6F7F00D4E593 /* Frameworks */,
+				B5F121CE2FDC6F7F00D4E593 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B5F121D12FDC6F7F00D4E593 /* voltaHelper */,
+			);
+			name = voltaHelper;
+			packageProductDependencies = (
+				B5F121E42FDC712600D4E593 /* VoltaCore */,
+			);
+			productName = voltaHelper;
+			productReference = B5F121D02FDC6F7F00D4E593 /* voltaHelper */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B5EC9BB72FD72F1A00193AA5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2650;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					B5EC9BBE2FD72F1A00193AA5 = {
+						CreatedOnToolsVersion = 26.5;
+					};
+					B5EC9BCB2FD72F1C00193AA5 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = B5EC9BBE2FD72F1A00193AA5;
+					};
+					B5EC9BD52FD72F1C00193AA5 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = B5EC9BBE2FD72F1A00193AA5;
+					};
+					B5F121CF2FDC6F7F00D4E593 = {
+						CreatedOnToolsVersion = 26.5;
+					};
+				};
+			};
+			buildConfigurationList = B5EC9BBA2FD72F1A00193AA5 /* Build configuration list for PBXProject "volta" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B5EC9BB62FD72F1A00193AA5;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B5F121BE2FDC6F0100D4E593 /* XCLocalSwiftPackageReference "Packages/VoltaCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B5EC9BC02FD72F1A00193AA5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B5EC9BBE2FD72F1A00193AA5 /* volta */,
+				B5EC9BCB2FD72F1C00193AA5 /* voltaTests */,
+				B5EC9BD52FD72F1C00193AA5 /* voltaUITests */,
+				B5F121CF2FDC6F7F00D4E593 /* voltaHelper */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B5EC9BBD2FD72F1A00193AA5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5EC9BCA2FD72F1C00193AA5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5EC9BD42FD72F1C00193AA5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B5EC9BBB2FD72F1A00193AA5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5EC9BC82FD72F1C00193AA5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5EC9BD22FD72F1C00193AA5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5F121CC2FDC6F7F00D4E593 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B5EC9BCE2FD72F1C00193AA5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B5EC9BBE2FD72F1A00193AA5 /* volta */;
+			targetProxy = B5EC9BCD2FD72F1C00193AA5 /* PBXContainerItemProxy */;
+		};
+		B5EC9BD82FD72F1C00193AA5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B5EC9BBE2FD72F1A00193AA5 /* volta */;
+			targetProxy = B5EC9BD72FD72F1C00193AA5 /* PBXContainerItemProxy */;
+		};
+		B5F121E72FDC735700D4E593 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B5F121CF2FDC6F7F00D4E593 /* voltaHelper */;
+			targetProxy = B5F121E62FDC735700D4E593 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		B5EC9BDE2FD72F1C00193AA5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 77E942E041ED47748751C1C3 /* Signing.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+			};
+			name = Debug;
+		};
+		B5EC9BDF2FD72F1C00193AA5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 77E942E041ED47748751C1C3 /* Signing.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+			};
+			name = Release;
+		};
+		B5EC9BE12FD72F1C00193AA5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = volta/volta.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rojiwon.volta;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		B5EC9BE22FD72F1C00193AA5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = volta/volta.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rojiwon.volta;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		B5EC9BE42FD72F1C00193AA5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rojiwon.voltaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/volta.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/volta";
+			};
+			name = Debug;
+		};
+		B5EC9BE52FD72F1C00193AA5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rojiwon.voltaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/volta.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/volta";
+			};
+			name = Release;
+		};
+		B5EC9BE72FD72F1C00193AA5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rojiwon.voltaUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = volta;
+			};
+			name = Debug;
+		};
+		B5EC9BE82FD72F1C00193AA5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rojiwon.voltaUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = volta;
+			};
+			name = Release;
+		};
+		B5F121D52FDC6F7F00D4E593 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = voltaHelper/voltaHelper.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = voltaHelper/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rojiwon.volta.helper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		B5F121D62FDC6F7F00D4E593 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = voltaHelper/voltaHelper.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = voltaHelper/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rojiwon.volta.helper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B5EC9BBA2FD72F1A00193AA5 /* Build configuration list for PBXProject "volta" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5EC9BDE2FD72F1C00193AA5 /* Debug */,
+				B5EC9BDF2FD72F1C00193AA5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B5EC9BE02FD72F1C00193AA5 /* Build configuration list for PBXNativeTarget "volta" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5EC9BE12FD72F1C00193AA5 /* Debug */,
+				B5EC9BE22FD72F1C00193AA5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B5EC9BE32FD72F1C00193AA5 /* Build configuration list for PBXNativeTarget "voltaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5EC9BE42FD72F1C00193AA5 /* Debug */,
+				B5EC9BE52FD72F1C00193AA5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B5EC9BE62FD72F1C00193AA5 /* Build configuration list for PBXNativeTarget "voltaUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5EC9BE72FD72F1C00193AA5 /* Debug */,
+				B5EC9BE82FD72F1C00193AA5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B5F121D42FDC6F7F00D4E593 /* Build configuration list for PBXNativeTarget "voltaHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5F121D52FDC6F7F00D4E593 /* Debug */,
+				B5F121D62FDC6F7F00D4E593 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B5F121BE2FDC6F0100D4E593 /* XCLocalSwiftPackageReference "Packages/VoltaCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/VoltaCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B5F121BF2FDC6F0100D4E593 /* VoltaCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VoltaCore;
+		};
+		B5F121E42FDC712600D4E593 /* VoltaCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B5F121BE2FDC6F0100D4E593 /* XCLocalSwiftPackageReference "Packages/VoltaCore" */;
+			productName = VoltaCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B5EC9BB72FD72F1A00193AA5 /* Project object */;
+}

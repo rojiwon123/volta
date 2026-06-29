@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Xcode user/build state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+build/
+DerivedData/
+.derived-data-log-*
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+
+# Misc / tooling
+*.swp
+.netrc
+
+# volta: delete-workaround scratch (이 환경에서 파일 삭제가 막혀 임시로 사용)
+.trash/
+
+# 코드서명 팀(로컬 전용 — 팀 ID를 repo에 두지 않는다)
+# Signing.xcconfig.example을 복사해 DEVELOPMENT_TEAM을 채워 쓴다.
+Signing.xcconfig
