@@ -102,15 +102,20 @@ final class MenuBarController: NSObject {
                     self.monitor.heatProtectionEnabled.toggle()
                     self.monitor.previewEnabled.toggle()
                     self.harnessCycle += 1
-                    if self.harnessCycle >= 12 {
-                        self.harnessTimer?.invalidate()
-                        // stress 후 상태를 파일에 추가 — 팝오버가 고정 크기를 유지하고 여전히 표시 중이며
-                        // 크래시 없이 끝났는지 회수용. (레이아웃 재귀 경고 자체는 이 환경에서 캡처 불가.)
+                    // 루프 모드(/tmp/volta-harness-loop): lldb가 백트레이스를 잡을 시간을 벌도록 stress를
+                    // 무한 반복한다(팝오버가 닫혀 있으면 다시 열고 토글 지속). status item 렌더도 매번 갱신.
+                    let loop = FileManager.default.fileExists(atPath: "/tmp/volta-harness-loop")
+                    if self.harnessCycle % 12 == 0 {
                         let cs = self.popover.contentSize
-                        let done = "stressDone cycles=\(self.harnessCycle) popoverShown=\(self.popover.isShown) contentSize=\(Int(cs.width))x\(Int(cs.height))\n"
+                        let done = "stress cycles=\(self.harnessCycle) popoverShown=\(self.popover.isShown) contentSize=\(Int(cs.width))x\(Int(cs.height)) loop=\(loop)\n"
                         self.harnessLog.notice("\(done, privacy: .public)")
                         if let h = FileHandle(forWritingAtPath: "/tmp/volta-harness-out") {
                             h.seekToEndOfFile(); h.write(Data(done.utf8)); try? h.close()
+                        }
+                        if loop {
+                            if !self.popover.isShown { self.togglePopover() }   // 닫혔으면 다시 열어 표시 레이아웃 유발.
+                        } else {
+                            self.harnessTimer?.invalidate()
                         }
                     }
                 }
