@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  앱 entitlements.
+  ⚠️ 설계 결정: App Sandbox 비활성.
+     이유 — IOKit(AppleSMC) user client 및 AppleSmartBattery 읽기는 sandbox에서 차단됨.
+     AlDente/BatteryToolkit 등 동종 앱도 비샌드박스로 동작.
+  Hardened Runtime은 유지(notarization 위해). 배포는 Developer ID + notarize 필요.
+  실기에서 sandbox on 상태로 IOKit 읽기 가부를 한번 확인 후 최종 결정(검증 필요).
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+</dict>
+</plist>
