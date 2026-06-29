@@ -137,6 +137,14 @@ final class BatteryMonitor {
     private var lastDiagLog: String?   // 진단 로그 중복 억제(값 변화 시에만 출력).
     #endif
 
+    // MARK: 점검(self-test) — 사용자가 버튼으로 실행. 제어를 하나씩 적용·관찰해 동작 여부 판정 후 안전 복원.
+    /// 점검 진행 중 여부(UI: "점검 중…" 표시 + 컨트롤 잠금). 진행 중에는 정상 폴링 tick이 멈춘다.
+    private(set) var selfTestRunning = false
+    /// 점검 단계별 결과(진행 중 누적, 끝나면 최종). UI 표시용.
+    private(set) var selfTestResults: [SelfTestStepResult] = []
+    /// 점검 안내/요약 메시지(제어 불가 등). UI 표시용.
+    private(set) var selfTestMessage: String?
+
     /// App Intents 등 in-process 비-View 코드에서 접근하기 위한 공유 인스턴스.
     static let shared = BatteryMonitor()
 
@@ -177,6 +185,9 @@ final class BatteryMonitor {
 
     /// 한 사이클: 읽기 → 상태 판단 → (변화 또는 주기적으로) 헬퍼에 적용.
     func tick() async {
+        // 점검 중에는 정상 폴링 적용을 멈춘다 — 점검이 제어를 직접 적용/복원하므로 서로 간섭하면 안 된다.
+        // (점검 종료 시 runSelfTest가 마지막에 tick을 호출해 정상 운영을 재개한다.)
+        if selfTestRunning { return }
         let r = await smc.readBattery()
         self.reading = r
 
@@ -294,6 +305,88 @@ final class BatteryMonitor {
         if appliedSleepInhibit == true, await helper.setSleepInhibit(false) { appliedSleepInhibit = false }
         if forceDischargeTarget != nil { forceDischargeTarget = nil }
         if tripPrepEnabled { tripPrepEnabled = false }
+    }
+
+    // MARK: 점검(self-test) 오케스트레이션 — 라이브 적용/관찰만 앱 계층, 판정은 VoltaCore 순수 함수.
+
+    /// 제어를 단계별로 적용 → 정착·샘플 → 거동 판정 → **반드시 안전 복원**. 결과로 DeviceSupport 갱신
+    /// (충전 억제 실패→강등, 전부 동작→verifiedOnHardware 승격). 사용자 설정(상한/강제방전 등)은
+    /// 점검이 바꾸지 않으므로 끝나면 그대로 정상 운영에 복귀한다.
+    /// ⚠️ 실제 배터리를 잠깐 억제/방전시키므로 **사용자 버튼으로만** 실행한다.
+    func runSelfTest() async {
+        guard !selfTestRunning else { return }
+        guard isControlSupported else {
+            selfTestMessage = "제어 가능 상태에서만 점검할 수 있습니다(헬퍼 연결·기기 지원 필요)."
+            return
+        }
+        selfTestRunning = true
+        selfTestResults = []
+        selfTestMessage = "점검 중에는 잠깐 충전이 멈추거나 방전될 수 있습니다."
+
+        var results: [SelfTestStepResult] = []
+        for step in SelfTestStep.allCases {
+            let outcome = await runSelfTestStep(step)
+            results.append(SelfTestStepResult(step: step, outcome: outcome))
+            selfTestResults = results            // 단계마다 UI 진행 표시.
+            await restoreSafeControls()           // 다음 단계 전 항상 안전 복원.
+            if Task.isCancelled { break }
+        }
+
+        // 결과 → DeviceSupport 검증상태 반영(강등/승격). base는 정적 판정에서 시작.
+        deviceSupport = SelfTest.resolvedSupport(base: DeviceSupport.current, results: results)
+        selfTestResults = results
+        selfTestMessage = summarize(results)
+        selfTestRunning = false
+
+        // 안전 복원 한 번 더(오류/중단 대비) + 사용자 설정대로 정상 운영 재개.
+        await restoreSafeControls()
+        await tick()
+    }
+
+    /// 한 단계: 전제 검사(불가면 SMC 미적용) → 적용 → 정착·샘플 → 거동 판정.
+    private func runSelfTestStep(_ step: SelfTestStep) async -> SelfTestOutcome {
+        let before = await smc.readBattery()
+        if let blocked = SelfTest.precondition(step: step, reading: before) {
+            return blocked                        // 전제 미충족 → SMC 건드리지 않고 판정 불가.
+        }
+        // 제어 적용(헬퍼 write가 실제 수행되지 않으면 판정 불가).
+        guard await applySelfTestControl(step) else {
+            return .undetermined(reason: "헬퍼 적용 실패")
+        }
+        try? await Task.sleep(for: effectSettleDelay)   // 정착(SMC/OS 반영 시간차).
+        var after: [BatteryReading] = []
+        for _ in 0..<effectSampleCount {
+            after.append(await smc.readBattery())
+            try? await Task.sleep(for: effectSampleInterval)
+        }
+        let effect = smc.verifyControlEffect(intent: step.intent, before: before, after: after)
+        return SelfTest.outcome(from: effect)
+    }
+
+    /// 점검용 제어 적용. 헬퍼가 실제 write를 수행했는지(true) 반환.
+    private func applySelfTestControl(_ step: SelfTestStep) async -> Bool {
+        switch step {
+        case .chargeInhibit:  return await helper.setChargingAllowed(false)   // 충전 중단(CHTE).
+        case .adapterDisable: return await helper.setAdapterEnabled(false)    // 어댑터 차단(강제 방전).
+        }
+    }
+
+    /// 점검 단계 사이/종료의 안전 복원 — 충전 허용 + 어댑터 정상 + 억제 해제. (사용자 설정은 보존.)
+    private func restoreSafeControls() async {
+        if await helper.setChargingAllowed(true) { appliedChargingAllowed = true }
+        if await helper.setAdapterEnabled(true) { appliedAdapterEnabled = true }
+        if appliedSleepInhibit == true, await helper.setSleepInhibit(false) { appliedSleepInhibit = false }
+    }
+
+    /// 결과 요약 메시지(UI). 강등/승격/혼재를 한 줄로.
+    private func summarize(_ results: [SelfTestStepResult]) -> String {
+        if results.contains(where: { $0.step == .chargeInhibit && $0.outcome == .notWorking }) {
+            return "충전 억제가 동작하지 않아 제어를 비활성화했습니다."
+        }
+        if !results.isEmpty, results.allSatisfy({ $0.outcome == .working }) {
+            return "모든 제어가 동작합니다(실기 검증됨)."
+        }
+        return "일부 항목은 판정하지 못했습니다 — 사유를 확인하세요."
     }
 
     /// 팝오버 헤더의 배터리 심볼. 메뉴바 아이콘과 **동일 기준**(menuBarState = 전력 흐름 기반,

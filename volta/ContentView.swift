@@ -17,9 +17,13 @@ struct ContentView: View {
             Divider()
             // 제어 가능: 컨트롤 위젯. 불가(미지원/헬퍼 없음/효과 미관찰): 위젯을 숨기고 "기능 비활성화" 표시.
             if monitor.isControlSupported {
-                chargeLimitSection
-                Divider()
-                togglesSection
+                // 점검 중에는 컨트롤을 잠근다(.disabled) — 점검이 제어를 직접 적용/복원하는 동안 사용자 변경 차단.
+                Group {
+                    chargeLimitSection
+                    Divider()
+                    togglesSection
+                }
+                .disabled(monitor.selfTestRunning)
             } else {
                 controlsDisabledPlaceholder
             }
@@ -27,6 +31,8 @@ struct ContentView: View {
             PowerFlowView(flow: PowerFlow.from(power: monitor.displayPower, isACPresent: monitor.displayACPresent))
             Divider()
             HelperStatusView(client: monitor.helper)
+            // 점검(self-test): 헬퍼 상태 근처. 제어 가능할 때만 버튼 활성, 결과는 항상 표시.
+            SelfTestView(monitor: monitor)
             if monitor.reading.cycleCount != nil || monitor.reading.batteryHealthPercent != nil {
                 Divider()
                 batteryInfoRow

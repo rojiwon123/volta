@@ -53,6 +53,13 @@ public enum DeviceSupportResult: Sendable, Equatable {
         return effect == .notObserved ? .ineffective(reason: reason) : self
     }
 
+    /// 점검(self-test)에서 제어 효과가 실제로 확인되면 검증상태를 **승격**한다(순수).
+    /// `.supported(.mappedUnverified)` → `.supported(.verifiedOnHardware)`. 그 외 상태는 그대로.
+    public func promotedToVerified() -> DeviceSupportResult {
+        if case .supported(.mappedUnverified) = self { return .supported(.verifiedOnHardware) }
+        return self
+    }
+
     /// 헬퍼가 enabled가 아니면(미설치/미연결) 런타임 강등(`.ineffective`)을 **표시/유지하지 않고** base로 되돌린다.
     /// 헬퍼가 없으면 SMC write 자체가 안 일어나 "효과 미관찰"을 단정할 수 없으므로, 헬퍼 부재는
     /// `.ineffective`가 아니라 기존 헬퍼 상태 안내(HelperStatusView) 경로로만 표시되게 한다.
