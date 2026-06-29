@@ -94,44 +94,45 @@ import Testing
         .init(step: step, outcome: outcome)
     }
 
-    @Test func chargeInhibitFailureDowngradesToIneffective() {
-        let base = DeviceSupportResult.supported(.mappedUnverified)
+    // 능력별 반영: 충전 억제만 실패 → 충전 억제 능력만 ineffective, 어댑터 차단은 effective(독립).
+    @Test func chargeInhibitFailureMarksOnlyThatCapability() {
         let results = [res(.chargeInhibit, .notWorking), res(.adapterDisable, .working)]
-        if case .ineffective = SelfTest.resolvedSupport(base: base, results: results) {} else {
-            Issue.record("충전 억제 실패는 .ineffective로 강등돼야 함")
-        }
+        let caps = SelfTest.resolvedCapabilities(base: ControlCapabilityState(), results: results)
+        #expect(caps.isIneffective(.chargeInhibit) == true)
+        #expect(caps.isIneffective(.adapterDisable) == false)
+        #expect(caps.effectiveness(.adapterDisable) == .effective)
     }
 
-    @Test func allWorkingPromotesToVerified() {
+    // 강제 방전(어댑터 차단)만 실패 → 어댑터 차단 능력만 ineffective, 충전 억제는 유지(동작).
+    @Test func adapterFailureMarksOnlyThatCapability() {
+        let results = [res(.chargeInhibit, .working), res(.adapterDisable, .notWorking)]
+        let caps = SelfTest.resolvedCapabilities(base: ControlCapabilityState(), results: results)
+        #expect(caps.isIneffective(.adapterDisable) == true)
+        #expect(caps.isIneffective(.chargeInhibit) == false)
+    }
+
+    // 판정 불가는 능력 상태를 바꾸지 않는다(불확실 보수).
+    @Test func undeterminedLeavesCapabilityUnchanged() {
+        let results = [res(.adapterDisable, .undetermined(reason: "어댑터 필요"))]
+        let caps = SelfTest.resolvedCapabilities(base: ControlCapabilityState(), results: results)
+        #expect(caps.effectiveness(.adapterDisable) == .untested)
+    }
+
+    @Test func allWorkingPromotesVerificationStatus() {
         let base = DeviceSupportResult.supported(.mappedUnverified)
         let results = [res(.chargeInhibit, .working), res(.adapterDisable, .working)]
         #expect(SelfTest.resolvedSupport(base: base, results: results) == .supported(.verifiedOnHardware))
     }
 
-    @Test func adapterFailAloneDoesNotDowngrade() {
-        // 충전 억제는 동작, 강제 방전만 실패 → 전체를 끄지 않고 그대로 유지(보고로만 드러냄).
+    @Test func anyFailureDoesNotPromote() {
         let base = DeviceSupportResult.supported(.mappedUnverified)
-        let results = [res(.chargeInhibit, .working), res(.adapterDisable, .notWorking)]
-        #expect(SelfTest.resolvedSupport(base: base, results: results) == base)
+        #expect(SelfTest.resolvedSupport(base: base, results: [res(.chargeInhibit, .working), res(.adapterDisable, .notWorking)]) == base)
+        #expect(SelfTest.resolvedSupport(base: base, results: [res(.chargeInhibit, .working), res(.adapterDisable, .undetermined(reason: "x"))]) == base)
     }
 
-    @Test func undeterminedMixDoesNotPromoteOrDowngrade() {
-        let base = DeviceSupportResult.supported(.mappedUnverified)
-        let results = [res(.chargeInhibit, .working), res(.adapterDisable, .undetermined(reason: "어댑터 필요"))]
-        #expect(SelfTest.resolvedSupport(base: base, results: results) == base)   // 불확실 → 변경 없음
-    }
-
-    @Test func unsupportedBaseUnchanged() {
+    @Test func unsupportedBaseNotPromoted() {
         let base = DeviceSupportResult.unsupported(reason: "x")
-        let results = [res(.chargeInhibit, .working), res(.adapterDisable, .working)]
-        #expect(SelfTest.resolvedSupport(base: base, results: results) == base)
-    }
-
-    @Test func promotedToVerifiedOnlyFromMappedUnverified() {
-        #expect(DeviceSupportResult.supported(.mappedUnverified).promotedToVerified() == .supported(.verifiedOnHardware))
-        #expect(DeviceSupportResult.supported(.verifiedOnHardware).promotedToVerified() == .supported(.verifiedOnHardware))
-        #expect(DeviceSupportResult.unsupported(reason: "x").promotedToVerified() == .unsupported(reason: "x"))
-        #expect(DeviceSupportResult.ineffective(reason: "x").promotedToVerified() == .ineffective(reason: "x"))
+        #expect(SelfTest.resolvedSupport(base: base, results: [res(.chargeInhibit, .working)]) == base)
     }
 
     @Test func emptyResultsDoNotPromote() {

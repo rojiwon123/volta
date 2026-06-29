@@ -43,6 +43,19 @@ public struct EffectSamplingPolicy: Sendable, Equatable {
     public static let `default` = EffectSamplingPolicy()
 }
 
+/// 효과검증 **판정 게이팅**(순수). 검증을 예약한 시점과 판정 시점 사이에 그 제어가 바뀌면(세대 불일치)
+/// 또는 더 이상 그 의도가 적용 중이 아니면(취소/해제) 판정을 **폐기**해야 한다. 그러지 않으면 "취소 후 상태"
+/// (예: 강제 방전을 끈 직후의 어댑터 재연결 상태)를 보고 `.notObserved`로 오판해 잘못 강등한다.
+public enum VerificationGating {
+    /// true면 판정 진행, false면 폐기(강등/승격 금지 — inconclusive 취급).
+    /// - scheduledGeneration: 검증 예약 시점의 능력별 세대(적용값 변화마다 증가).
+    /// - currentGeneration: 판정 시점의 세대. 다르면 그새 제어가 바뀐 것 → 폐기.
+    /// - intentStillApplied: 판정 시점에 그 의도가 여전히 적용 중인지(충전 억제=충전 불가, 어댑터 차단=어댑터 꺼짐).
+    public static func shouldJudge(scheduledGeneration: Int, currentGeneration: Int, intentStillApplied: Bool) -> Bool {
+        scheduledGeneration == currentGeneration && intentStillApplied
+    }
+}
+
 public enum ControlEffectVerifier {
 
     /// 효과 검증을 **트리거해도 되는지**(순수). 헬퍼로 SMC write가 **실제 수행(성공)** 됐고 제어가 활성일

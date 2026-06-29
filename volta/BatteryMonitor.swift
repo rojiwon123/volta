@@ -10,6 +10,7 @@
 
 import Foundation
 import Observation
+import OSLog
 import VoltaCore
 
 @MainActor
@@ -22,15 +23,54 @@ final class BatteryMonitor {
 
     let helper = HelperClient()
 
-    /// 기기 지원 판정(capability gating). Apple Silicon + allowlist 모델만 제어 활성.
+    /// 기기 지원 판정(정적 capability gating). Apple Silicon + allowlist 모델만 제어 활성.
     /// 미지원이면 SMC 쓰기는 SMCService에서 no-op이고, UI는 제어 기능을 비활성/안내한다.
-    /// **런타임 강등 가능**: write 후 효과 미관찰 시 `.ineffective`로 내려가 제어가 비활성된다.
+    /// (런타임 효과 미관찰에 의한 비활성은 더 이상 기기 전체가 아니라 **능력별**(`capabilities`)로 처리한다.)
     private(set) var deviceSupport: DeviceSupportResult = DeviceSupport.current
-    /// 제어를 실제로 쓸 수 있는지 — 기기 지원(allowsSMCWrites) **그리고** 헬퍼가 실제 연결돼 응답할 때만.
-    /// 헬퍼 판정은 등록 status(.enabled, "등록 의도"라 데몬 미로드여도 true일 수 있음)가 아니라
-    /// **실제 XPC 핑 성공(isReachable)** 으로 한다. 미지원/`.ineffective`/헬퍼 미설치·미연결·미응답 등
-    /// "제어 불가" 모든 상태에서 false → UI가 컨트롤을 숨기고 "기능 비활성화" 안내.
+
+    /// **능력별 런타임 효과 상태**. 효과검증/점검에서 한 능력(충전 억제 / 어댑터 차단)이 안 먹으면
+    /// 그 능력만 `.ineffective`로 두고, 그 능력에 의존하는 기능만 가린다(다른 능력 기능은 유지).
+    private(set) var capabilities = ControlCapabilityState()
+
+    /// 제어를 **기본적으로** 쓸 수 있는지 — 기기 지원(allowsSMCWrites) + 헬퍼 실제 연결(isReachable).
+    /// (개별 기능 노출은 여기에 더해 능력별 상태까지 보는 `isFeatureAvailable`로 판단한다.)
+    /// 헬퍼 판정은 등록 status(.enabled, 데몬 미로드여도 true일 수 있음)가 아니라 실제 XPC 핑 성공으로 한다.
     var isControlSupported: Bool { deviceSupport.allowsSMCWrites && helper.isReachable }
+
+    /// 한 능력을 실제로 쓸 수 있는지(기기+헬퍼+그 능력 비활성 아님).
+    func isCapabilityAvailable(_ cap: ControlCapability) -> Bool {
+        ControlAvailability.isCapabilityAvailable(cap,
+            deviceWritable: deviceSupport.allowsSMCWrites, helperReachable: helper.isReachable, capabilities: capabilities)
+    }
+
+    /// 한 기능을 노출/사용할 수 있는지(그 기능이 의존하는 능력이 사용 가능할 때).
+    func isFeatureAvailable(_ feature: ControlFeature) -> Bool {
+        ControlAvailability.isFeatureAvailable(feature,
+            deviceWritable: deviceSupport.allowsSMCWrites, helperReachable: helper.isReachable, capabilities: capabilities)
+    }
+
+    /// 컨트롤 영역을 보일지(능력 중 하나라도 사용 가능). 전부 비활성/제어 불가면 false → 플레이스홀더.
+    var anyControlAvailable: Bool {
+        ControlAvailability.anyCapabilityAvailable(
+            deviceWritable: deviceSupport.allowsSMCWrites, helperReachable: helper.isReachable, capabilities: capabilities)
+    }
+
+    /// 일부 능력만 비활성일 때(컨트롤 영역은 보이되 일부 기능 숨김) 안내 문구. 없으면 nil.
+    var partialDisabledNote: String? {
+        guard isControlSupported, anyControlAvailable else { return nil }
+        let dead = ControlCapability.allCases.filter { capabilities.isIneffective($0) }
+        guard !dead.isEmpty else { return nil }
+        return dead.map { "\($0.label) 미작동 — 관련 기능 숨김" }.joined(separator: "\n")
+    }
+
+    /// 컨트롤 영역을 못 보일 때(전부 비활성) 사유. 기기 미지원/모든 능력 미작동. 헬퍼 문제는 nil(HelperStatusView가 안내).
+    var controlsDisabledReason: String? {
+        if !deviceSupport.allowsSMCWrites { return deviceSupport.summary }
+        guard helper.isReachable else { return nil }   // 헬퍼 미연결 → 아래 헬퍼 상태 안내로.
+        let dead = ControlCapability.allCases.filter { capabilities.isIneffective($0) }
+        guard !dead.isEmpty else { return nil }
+        return "제어 미작동(효과 미관찰): " + dead.map(\.label).joined(separator: ", ")
+    }
 
     // MARK: 사용자 설정(영구 저장)
     var chargeLimit: Int {
@@ -118,21 +158,35 @@ final class BatteryMonitor {
     private let pollInterval: Duration = .seconds(10)
 
     // 적용 상태 추적(중복 SMC 쓰기 방지 + 주기적 재적용).
-    private var appliedChargingAllowed: Bool?
-    private var appliedAdapterEnabled: Bool?
+    // didSet: 적용값이 **바뀔 때마다** 능력별 세대 카운터를 올린다 → 검증 예약 후 그 제어가 바뀌면(취소/해제)
+    // 판정 시점에 세대 불일치로 stale 판정을 폐기한다(어댑터 차단 미반영 오탐의 근본 원인 차단).
+    private var appliedChargingAllowed: Bool? {
+        didSet { if oldValue != appliedChargingAllowed { chargeInhibitGen &+= 1 } }
+    }
+    private var appliedAdapterEnabled: Bool? {
+        didSet { if oldValue != appliedAdapterEnabled { adapterDisableGen &+= 1 } }
+    }
     private var appliedSleepInhibit: Bool?
     private var reassertCounter = 0
     /// N틱마다 상태 변화가 없어도 SMC를 재적용(외부 리셋 대비). 10틱 ≈ 100초.
     private let reassertEvery = 10
 
-    // MARK: 효과 검증(행동 기반) — 제어 적용 후 거동이 바뀌는지 확인, 미관찰 시 런타임 강등.
-    /// 세션당 제어 유형별 1회만 검증(먹으면 재검증 불필요, 안 먹으면 강등 sticky).
+    // MARK: 효과 검증(행동 기반) — 제어 적용 후 거동이 바뀌는지 확인, 미관찰 시 **능력별** 비활성.
+    /// 능력별 세대 카운터(적용값 변화 시 증가). 검증 예약 시점 값과 판정 시점 값이 다르면 stale → 폐기.
+    private var chargeInhibitGen = 0
+    private var adapterDisableGen = 0
+    /// 능력별: 결론(observed/notObserved) 판정 완료 여부(완료 시 재검증 불필요). 폐기/inconclusive면 false 유지.
     private var verifiedChargeInhibit = false
     private var verifiedAdapterDisable = false
+    /// 능력별: 검증 진행 중(중복 예약 방지). 판정/폐기 시 해제.
+    private var verifyingChargeInhibit = false
+    private var verifyingAdapterDisable = false
     /// 정착 지연 + 샘플 수/간격. (실시간 지연 — 판정 로직 자체는 VoltaCore 순수 함수로 단위 테스트.)
     private let effectSettleDelay: Duration = .seconds(15)
     private let effectSampleCount = 3
     private let effectSampleInterval: Duration = .seconds(5)
+    /// 효과검증 진단 로그(통합 로그 — `log show --predicate 'subsystem == "com.rojiwon.volta"'`로 확인 가능).
+    private let verifyLog = Logger(subsystem: "com.rojiwon.volta", category: "verify")
     #if DEBUG
     private var lastDiagLog: String?   // 진단 로그 중복 억제(값 변화 시에만 출력).
     #endif
@@ -217,28 +271,29 @@ final class BatteryMonitor {
         if mustReassert { reassertCounter = 0 }
         guard changed || mustReassert else { return }
 
-        let action = ChargeAction.from(state: next)
-        // 런타임 강등(.ineffective)/미지원이면 제어를 비활성하고 **안전 상태로 수렴**:
-        // 충전 허용 + 어댑터 정상 + 억제 없음. (제어가 이 기기에서 안 먹으므로 더 시도하지 않는다.)
-        let controlOn = isControlSupported
-        let wantAllowCharging = controlOn ? action.allowCharging : true
-        // 어댑터 목표: 강제 방전 활성 시 의도대로, 비활성 시 항상 복원(켜짐) 보장.
-        let wantAdapterEnabled = controlOn ? (forceDischargeTarget != nil ? !action.forceDischarge : true) : true
-        // 수면 억제(sleep inhibit): ① 기능 7(상한까지 억제 토글+충전) ② 기능 5(강제방전/외출준비 작동 중).
-        let overrideSleepPrevent = engine.shouldPreventSleepForOverride(reading: r, policy: currentPolicy())
-        let wantInhibit = controlOn ? ((inhibitSleepUntilLimit && next == .charging) || overrideSleepPrevent) : false
+        // 헬퍼 미연결이면 잘못 남은 능력별 비활성(.ineffective)을 자동 해제 — write가 안 일어나 "효과 미관찰"
+        // 단정 불가. 헬퍼 부재는 HelperStatusView로만 표시. (헬퍼 재연결 시 다시 검증/점검으로 판정.)
+        capabilities = capabilities.clearedIfWriteUnavailable(helperReachable: helper.isReachable)
 
-        // 헬퍼가 enabled가 아니면(미설치/미연결) 잘못된 런타임 강등(.ineffective)을 자동 해제 —
-        // 헬퍼 없으면 write가 안 일어나 "효과 미관찰" 단정 불가. 헬퍼 부재는 HelperStatusView로만 표시.
-        deviceSupport = deviceSupport.clearedIfControlWriteUnavailable(
-            helperEnabled: helper.status == .enabled, base: DeviceSupport.current)
+        let action = ChargeAction.from(state: next)
+        // **능력별** 게이팅: 그 능력이 안 먹으면(미지원/헬퍼없음/.ineffective) 해당 제어를 비활성하고 안전값으로.
+        // 충전 억제가 안 먹어도 어댑터 차단은 시도할 수 있고(그 반대도) — 능력별로 독립 판단한다.
+        let chargeCap = isCapabilityAvailable(.chargeInhibit)
+        let adapterCap = isCapabilityAvailable(.adapterDisable)
+        let wantAllowCharging = chargeCap ? action.allowCharging : true
+        // 어댑터 목표: 강제 방전 활성 시 의도대로, 비활성 시 항상 복원(켜짐) 보장.
+        let wantAdapterEnabled = adapterCap ? (forceDischargeTarget != nil ? !action.forceDischarge : true) : true
+        // 수면 억제(sleep inhibit): ① 기능 7(상한까지 억제 토글+충전) ② 기능 5(강제방전/외출준비 작동 중).
+        // 충전 억제 능력에 묶는다(상한이 동작해야 의미).
+        let overrideSleepPrevent = engine.shouldPreventSleepForOverride(reading: r, policy: currentPolicy())
+        let wantInhibit = chargeCap ? ((inhibitSleepUntilLimit && next == .charging) || overrideSleepPrevent) : false
 
         // 직전 적용값(검증 트리거의 "신규 적용" 판정용).
         let wasChargingAllowed = appliedChargingAllowed
         let wasAdapterEnabled = appliedAdapterEnabled
 
         // 변경이 있을 때만 SMC 쓰기(또는 주기적 재적용 시). 반환값 = **헬퍼가 실제 write를 수행했는지**
-        // (미연결/실패면 false) — 효과 검증은 이 성공 신호가 있을 때만 돈다.
+        // (미연결/실패면 false) — 효과 검증은 이 성공 신호가 있을 때만 돈다. (appliedX의 didSet이 세대 카운터 갱신.)
         var chargeWritePerformed = false
         if appliedChargingAllowed != wantAllowCharging || mustReassert {
             if await helper.setChargingAllowed(wantAllowCharging) {
@@ -259,58 +314,119 @@ final class BatteryMonitor {
             }
         }
 
-        // 효과 검증 트리거: **헬퍼로 write가 실제 수행(성공)된 경우에만** + 세션 첫 신규 적용. before=r.
-        // (write 미수행 = 헬퍼 미설치/미연결 → 검증·강등 안 함 → "효과 미관찰" 오탐 방지.)
-        if !verifiedChargeInhibit, wantAllowCharging == false, wasChargingAllowed != false,
-           ControlEffectVerifier.shouldVerify(writePerformed: chargeWritePerformed, controlSupported: controlOn) {
-            verifiedChargeInhibit = true
-            scheduleEffectVerification(intent: .chargeInhibited, before: r)
+        // 효과 검증 트리거: **헬퍼로 write가 실제 수행(성공)된 경우에만** + 신규 적용 + 미검증·미진행.
+        // 예약 시점의 능력별 세대를 함께 넘긴다 → 판정 시점에 그 제어가 바뀌면(취소/해제) stale로 폐기.
+        if !verifiedChargeInhibit, !verifyingChargeInhibit, wantAllowCharging == false, wasChargingAllowed != false,
+           ControlEffectVerifier.shouldVerify(writePerformed: chargeWritePerformed, controlSupported: chargeCap) {
+            verifyingChargeInhibit = true
+            scheduleEffectVerification(intent: .chargeInhibited, before: r, generation: chargeInhibitGen)
         }
-        if !verifiedAdapterDisable, wantAdapterEnabled == false, wasAdapterEnabled != false,
-           ControlEffectVerifier.shouldVerify(writePerformed: adapterWritePerformed, controlSupported: controlOn) {
-            verifiedAdapterDisable = true
-            scheduleEffectVerification(intent: .adapterDisabled, before: r)
+        if !verifiedAdapterDisable, !verifyingAdapterDisable, wantAdapterEnabled == false, wasAdapterEnabled != false,
+           ControlEffectVerifier.shouldVerify(writePerformed: adapterWritePerformed, controlSupported: adapterCap) {
+            verifyingAdapterDisable = true
+            scheduleEffectVerification(intent: .adapterDisabled, before: r, generation: adapterDisableGen)
         }
     }
 
-    // MARK: 효과 검증 오케스트레이션(행동 기반) + 런타임 강등·안전 수렴
+    // MARK: 효과 검증 오케스트레이션(행동 기반) + 능력별 비활성·안전 수렴
 
-    /// 제어 적용 후 정착 지연 + 수 틱 샘플링 → 거동 판정. 미관찰(.notObserved)이면 강등+안전 수렴.
+    /// 제어 적용 후 정착 지연 + 수 틱 샘플링 → 거동 판정. 미관찰(.notObserved)이면 **그 능력만** 비활성 + 안전 수렴.
     /// fire-and-forget(폴링 루프를 막지 않음). 판정 로직은 VoltaCore 순수 함수(단위 테스트).
-    private func scheduleEffectVerification(intent: ControlIntent, before: BatteryReading) {
-        Task { [weak self] in await self?.runEffectVerification(intent: intent, before: before) }
+    /// generation = 예약 시점의 능력별 세대. 판정 시점 세대와 다르면(그새 제어가 바뀜) **폐기**(강등 금지).
+    private func scheduleEffectVerification(intent: ControlIntent, before: BatteryReading, generation: Int) {
+        Task { [weak self] in await self?.runEffectVerification(intent: intent, before: before, generation: generation) }
     }
 
-    private func runEffectVerification(intent: ControlIntent, before: BatteryReading) async {
-        guard isControlSupported else { return }
+    private func runEffectVerification(intent: ControlIntent, before: BatteryReading, generation: Int) async {
+        let cap = ControlCapability(intent: intent)
+        defer { setVerifying(cap, false) }              // 어떤 경로로 끝나든 진행 플래그 해제.
+        guard isControlSupported else { return }        // 헬퍼/기기 문제 → 판정 보류(재검증 가능).
         try? await Task.sleep(for: effectSettleDelay)   // 정착(SMC/OS 반영 시간차) — 즉시 판정 금지.
         var after: [BatteryReading] = []
         for _ in 0..<effectSampleCount {
             after.append(await smc.readBattery())
             try? await Task.sleep(for: effectSampleInterval)
         }
-        let effect = smc.verifyControlEffect(intent: intent, before: before, after: after)
-        guard effect == .notObserved else { return }   // observed/inconclusive → 강등 안 함.
 
-        // write됐는데 거동 안 바뀜 → 이 기기에서 제어 미작동으로 판단: 런타임 강등 + 안전 수렴.
-        let reason = (intent == .chargeInhibited) ? "충전 억제 미반영" : "어댑터 차단(강제 방전) 미반영"
-        deviceSupport = deviceSupport.applyingControlEffect(.notObserved, reason: reason)
-        await convergeToSafeState()
+        // ⭐ stale 차단: 검증을 예약한 제어가 판정 전에 바뀌거나(세대 불일치) 더는 그 적용 상태가 아니면
+        //    그 "취소 후 상태"를 보고 오판하지 않도록 **폐기**한다(inconclusive 취급, 강등/승격 안 함).
+        //    (예: 강제 방전을 '없음'으로 취소 → 어댑터 재연결 → 검증기가 방전 아님을 보고 '미반영' 오판하던 버그.)
+        guard VerificationGating.shouldJudge(scheduledGeneration: generation,
+                                             currentGeneration: currentGeneration(for: cap),
+                                             intentStillApplied: isIntentStillApplied(intent)) else {
+            logVerify(intent: intent, before: before, after: after, effect: nil, decision: "폐기(검증 중 의도 변경)")
+            return
+        }
+
+        let effect = smc.verifyControlEffect(intent: intent, before: before, after: after)
+        logVerify(intent: intent, before: before, after: after, effect: effect, decision: "판정")
+
+        switch effect {
+        case .observed:
+            capabilities = capabilities.applyingControlEffect(.observed, capability: cap, reason: "")
+            setVerified(cap, true)
+        case .notObserved:
+            // write됐는데 거동 안 바뀜 → **이 능력만** 비활성(의존 기능만 가려짐) + 그 능력만 안전 수렴.
+            capabilities = capabilities.applyingControlEffect(.notObserved, capability: cap, reason: reasonFor(cap))
+            setVerified(cap, true)
+            await convergeCapabilityToSafe(cap)
+        case .inconclusive:
+            break   // 불확실 → verified 안 함(다음 신규 적용에서 재검증 가능).
+        }
     }
 
-    /// 안전 상태로 수렴: 충전 허용 + 어댑터 정상 + 억제 해제 + 강제방전/외출준비 해제.
-    private func convergeToSafeState() async {
-        if await helper.setChargingAllowed(true) { appliedChargingAllowed = true }
-        if await helper.setAdapterEnabled(true) { appliedAdapterEnabled = true }
-        if appliedSleepInhibit == true, await helper.setSleepInhibit(false) { appliedSleepInhibit = false }
-        if forceDischargeTarget != nil { forceDischargeTarget = nil }
-        if tripPrepEnabled { tripPrepEnabled = false }
+    private func currentGeneration(for cap: ControlCapability) -> Int {
+        cap == .chargeInhibit ? chargeInhibitGen : adapterDisableGen
+    }
+    /// 검증 의도가 **여전히 적용 중**인지(취소되지 않았는지). 충전 억제=충전 불가 유지, 어댑터 차단=어댑터 꺼짐 유지.
+    private func isIntentStillApplied(_ intent: ControlIntent) -> Bool {
+        switch intent {
+        case .chargeInhibited: return appliedChargingAllowed == false
+        case .adapterDisabled: return appliedAdapterEnabled == false
+        }
+    }
+    private func setVerifying(_ cap: ControlCapability, _ v: Bool) {
+        if cap == .chargeInhibit { verifyingChargeInhibit = v } else { verifyingAdapterDisable = v }
+    }
+    private func setVerified(_ cap: ControlCapability, _ v: Bool) {
+        if cap == .chargeInhibit { verifiedChargeInhibit = v } else { verifiedAdapterDisable = v }
+    }
+    private func reasonFor(_ cap: ControlCapability) -> String {
+        cap == .chargeInhibit ? "충전 억제 미반영" : "어댑터 차단(강제 방전) 미반영"
+    }
+
+    /// 효과검증 진단 1줄(통합 로그). before/after의 핵심 필드 + 판정/폐기 사유를 남겨 추적 가능하게.
+    private func logVerify(intent: ControlIntent, before: BatteryReading, after: [BatteryReading],
+                           effect: ControlEffect?, decision: String) {
+        func f(_ r: BatteryReading) -> String {
+            let w = r.power.batteryWatts.map { String(format: "%.1f", $0) } ?? "nil"
+            return "chg=\(r.isCharging) ac=\(r.isACPresent) battW=\(w)"
+        }
+        let afterStr = after.map(f).joined(separator: " | ")
+        let eff = effect.map { String(describing: $0) } ?? "-"
+        verifyLog.notice("""
+            [verify] intent=\(String(describing: intent), privacy: .public) decision=\(decision, privacy: .public) \
+            effect=\(eff, privacy: .public) before[\(f(before), privacy: .public)] after[\(afterStr, privacy: .public)]
+            """)
+    }
+
+    /// 한 능력만 안전 상태로 수렴(다른 능력/기능은 건드리지 않음).
+    private func convergeCapabilityToSafe(_ cap: ControlCapability) async {
+        switch cap {
+        case .chargeInhibit:
+            if await helper.setChargingAllowed(true) { appliedChargingAllowed = true }
+            if appliedSleepInhibit == true, await helper.setSleepInhibit(false) { appliedSleepInhibit = false }
+            if tripPrepEnabled { tripPrepEnabled = false }
+        case .adapterDisable:
+            if await helper.setAdapterEnabled(true) { appliedAdapterEnabled = true }
+            if forceDischargeTarget != nil { forceDischargeTarget = nil }
+        }
     }
 
     // MARK: 점검(self-test) 오케스트레이션 — 라이브 적용/관찰만 앱 계층, 판정은 VoltaCore 순수 함수.
 
-    /// 제어를 단계별로 적용 → 정착·샘플 → 거동 판정 → **반드시 안전 복원**. 결과로 DeviceSupport 갱신
-    /// (충전 억제 실패→강등, 전부 동작→verifiedOnHardware 승격). 사용자 설정(상한/강제방전 등)은
+    /// 제어를 단계별로 적용 → 정착·샘플 → 거동 판정 → **반드시 안전 복원**. 결과를 **능력별** 상태에 반영
+    /// (한 능력 실패→그 능력만 비활성, 전부 동작→verifiedOnHardware 승격). 사용자 설정(상한/강제방전 등)은
     /// 점검이 바꾸지 않으므로 끝나면 그대로 정상 운영에 복귀한다.
     /// ⚠️ 실제 배터리를 잠깐 억제/방전시키므로 **사용자 버튼으로만** 실행한다.
     func runSelfTest() async {
@@ -332,7 +448,8 @@ final class BatteryMonitor {
             if Task.isCancelled { break }
         }
 
-        // 결과 → DeviceSupport 검증상태 반영(강등/승격). base는 정적 판정에서 시작.
+        // 결과 → **능력별** 효과 상태(강등은 능력별) + 검증상태 승격(전부 동작 시). base는 현재값/정적 판정.
+        capabilities = SelfTest.resolvedCapabilities(base: capabilities, results: results)
         deviceSupport = SelfTest.resolvedSupport(base: DeviceSupport.current, results: results)
         selfTestResults = results
         selfTestMessage = summarize(results)
@@ -378,10 +495,11 @@ final class BatteryMonitor {
         if appliedSleepInhibit == true, await helper.setSleepInhibit(false) { appliedSleepInhibit = false }
     }
 
-    /// 결과 요약 메시지(UI). 강등/승격/혼재를 한 줄로.
+    /// 결과 요약 메시지(UI). 능력별 비활성/승격/혼재를 한 줄로.
     private func summarize(_ results: [SelfTestStepResult]) -> String {
-        if results.contains(where: { $0.step == .chargeInhibit && $0.outcome == .notWorking }) {
-            return "충전 억제가 동작하지 않아 제어를 비활성화했습니다."
+        let failed = results.filter { $0.outcome == .notWorking }.map { $0.step.label }
+        if !failed.isEmpty {
+            return "\(failed.joined(separator: ", "))이(가) 동작하지 않아 해당 기능만 비활성화했습니다."
         }
         if !results.isEmpty, results.allSatisfy({ $0.outcome == .working }) {
             return "모든 제어가 동작합니다(실기 검증됨)."

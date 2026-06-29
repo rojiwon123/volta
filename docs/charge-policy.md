@@ -122,7 +122,8 @@
 | UI(충전 제한 게이지) | `volta/ContentView.swift` `ChargeLimitGauge` | 단일 노브 게이지로 max 한 값(20~100%)만 조절 |
 | 폴링 → 엔진 → 헬퍼 위임 | `volta/BatteryMonitor.swift` (@Observable) | 10초 폴링, 상태 변화 시 `HelperClient`(XPC)로 위임 |
 | 하드웨어 실현(SMC 쓰기) | `SMC/SMCService.swift` (`setChargingAllowed`/`setAdapterEnabled`) + 헬퍼 | probe로 존재하는 키만 write: 충전 억제 CHTE / 어댑터 차단 CHIE→CH0J→CH0I 폴백 / 방전 LED ACLC(외관). 매직값·효과 실기 검증 대상(`docs/device-support.md` §4-1) |
-| 효과 검증·런타임 강등 | `Device/ControlEffectVerification.swift`(순수 판정) + `SMCService.verifyControlEffect` + `BatteryMonitor`(샘플링·강등) | 제어 적용 후 거동(충전 멈춤/배터리 방전)을 정착 후 샘플해 확인. 미관찰이면 `.ineffective`로 강등 → 안전 수렴(충전 ON)·제어 비활성. 실기 효과는 미검증(`device-support.md` §4-2) |
+| 효과 검증·**능력별** 비활성 | `Device/ControlEffectVerification.swift`·`Device/ControlCapability.swift`(순수) + `SMCService.verifyControlEffect` + `BatteryMonitor`(샘플링·세대·반영) | 제어 적용 후 거동(충전 멈춤/배터리 방전)을 정착 후 샘플해 확인. 미관찰이면 **그 능력만**(`chargeInhibit`/`adapterDisable`) `ineffective`로 두고 그 능력 의존 기능만 비활성 → 다른 능력 유지. 검증 중 의도가 바뀌면(취소 등) 세대 불일치로 판정 폐기(오탐 방지, `VerificationGating`). 실기 효과는 미검증(`device-support.md` §4-2) |
+| 점검(self-test) | `Device/SelfTest.swift`(순수) + `BatteryMonitor.runSelfTest` + `Views/SelfTestView.swift` | 사용자 버튼으로 능력별 실동작 확인 → 능력별 반영/승격(`device-support.md` §4-3, feature-spec §10) |
 | 전력 흐름/방향 표시 | `Power/PowerFlow.swift` (`Activity`: charging/discharging/holding/idle) | 유지=holding, 강제/언플러그 방전=discharging |
 | 캘리브레이션 | **보류(나중에)** | 이번 설계 범위 밖 |
 

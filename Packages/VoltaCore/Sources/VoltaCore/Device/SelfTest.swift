@@ -31,6 +31,9 @@ public enum SelfTestStep: String, Sendable, CaseIterable, Equatable {
         }
     }
 
+    /// 이 단계가 검증하는 제어 능력.
+    public var capability: ControlCapability { ControlCapability(intent: intent) }
+
     /// UI 표시용 한국어 라벨.
     public var label: String {
         switch self {
@@ -108,23 +111,36 @@ public enum SelfTest {
         return outcome(from: effect)
     }
 
-    /// 점검 결과들로 DeviceSupport 검증상태를 갱신(순수).
-    /// - **충전 억제가 동작 안 함** → `.ineffective`로 강등(전체 제어 비활성). 충전 억제는 충전 제어의
-    ///   기반이라, 안 먹으면 어떤 제어도 신뢰할 수 없다(기존 런타임 강등과 동일 의미).
-    /// - **모든 단계가 동작함**(실패·판정불가 전무) → `mappedUnverified`를 `verifiedOnHardware`로 승격.
-    /// - 그 외(판정 불가 혼재 등) → 변경 없음(불확실하면 강등/승격하지 않는다).
-    /// - base가 supported가 아니면(이미 미지원/강등) 그대로.
-    ///
-    /// 강제 방전(adapterDisable) 단독 실패는 전체를 강등하지 않고 **결과 보고로만** 드러낸다 — 강제 방전은
-    /// 선택적 보조 기능이고 클램셸 등에서 모델별로 제한될 수 있어, 그 실패로 충전 제한까지 끄지 않는다.
+    /// 점검 결과들을 **능력별 효과 상태**에 반영(순수).
+    /// - working → 그 능력 effective, notWorking → ineffective(사유), undetermined → 변경 없음.
+    /// 능력별이므로 **충전 억제만 실패하면 그 능력 의존 기능만** 가려지고, 어댑터 차단이 동작하면
+    /// 강제 방전은 유지된다(그 반대도). 어느 능력 실패가 다른 능력을 끄지 않는다.
+    public static func resolvedCapabilities(
+        base: ControlCapabilityState,
+        results: [SelfTestStepResult]
+    ) -> ControlCapabilityState {
+        var state = base
+        for r in results {
+            switch r.outcome {
+            case .working:
+                state = state.setting(r.step.capability, .effective)
+            case .notWorking:
+                state = state.setting(r.step.capability, .ineffective(reason: "\(r.step.label) 미반영(점검)"))
+            case .undetermined:
+                break   // 불확실 → 변경 없음(강등/승격 안 함).
+            }
+        }
+        return state
+    }
+
+    /// 점검 결과로 DeviceSupport **검증상태 승격**(순수). 강등은 능력별(resolvedCapabilities)에서 처리하므로
+    /// 여기선 승격만: 모든 단계가 동작함(실패·판정불가 전무)이면 `mappedUnverified`→`verifiedOnHardware`.
+    /// - 그 외/실패/불확실 → 변경 없음. base가 supported가 아니면 그대로.
     public static func resolvedSupport(
         base: DeviceSupportResult,
         results: [SelfTestStepResult]
     ) -> DeviceSupportResult {
         guard case .supported = base else { return base }
-        if results.contains(where: { $0.step == .chargeInhibit && $0.outcome == .notWorking }) {
-            return base.applyingControlEffect(.notObserved, reason: "충전 억제 미반영(점검)")
-        }
         if !results.isEmpty, results.allSatisfy({ $0.outcome == .working }) {
             return base.promotedToVerified()
         }

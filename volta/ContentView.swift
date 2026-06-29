@@ -15,13 +15,22 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             header
             Divider()
-            // 제어 가능: 컨트롤 위젯. 불가(미지원/헬퍼 없음/효과 미관찰): 위젯을 숨기고 "기능 비활성화" 표시.
-            if monitor.isControlSupported {
+            // 능력(capability)별 노출: 능력 중 하나라도 쓸 수 있으면 컨트롤 영역을 보이고, 기능별로 가린다.
+            // (충전 억제만 미작동이면 강제 방전만 남고, 어댑터 차단만 미작동이면 강제 방전만 가려진다.)
+            // 전부 불가(미지원/헬퍼 없음/모든 능력 미작동)면 "기능 비활성화" 표시.
+            if monitor.anyControlAvailable {
                 // 점검 중에는 컨트롤을 잠근다(.disabled) — 점검이 제어를 직접 적용/복원하는 동안 사용자 변경 차단.
                 Group {
-                    chargeLimitSection
-                    Divider()
+                    if monitor.isFeatureAvailable(.chargeLimit) {
+                        chargeLimitSection
+                        Divider()
+                    }
                     togglesSection
+                    // 일부 능력만 미작동일 때 어떤 기능이 가려졌는지 안내.
+                    if let note = monitor.partialDisabledNote {
+                        Text(note).font(.caption2).foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .disabled(monitor.selfTestRunning)
             } else {
@@ -77,14 +86,13 @@ struct ContentView: View {
         }
     }
 
-    // MARK: 제어 불가 시 컨트롤 위젯 자리에 표시 — "기능 비활성화" + (기기 사유만, 헬퍼는 아래 안내와 중복 X)
+    // MARK: 제어 불가(모든 능력) 시 컨트롤 자리에 표시 — "기능 비활성화" + 사유(기기 미지원/모든 능력 미작동).
+    // 헬퍼 미설치·미연결은 아래 HelperStatusView가 안내하므로 여기선 사유를 비운다(중복 방지).
     private var controlsDisabledPlaceholder: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("기능 비활성화").font(.subheadline).foregroundStyle(.secondary)
-            // 사유는 기기 미지원/효과 미관찰(.ineffective)일 때만. 헬퍼 미설치·미연결은
-            // 아래 HelperStatusView가 안내하므로 여기서 반복하지 않는다.
-            if !monitor.deviceSupport.allowsSMCWrites {
-                Text(monitor.deviceSupport.summary)
+            if let reason = monitor.controlsDisabledReason {
+                Text(reason)
                     .font(.caption2).foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -111,38 +119,56 @@ struct ContentView: View {
         }
     }
 
-    // MARK: 토글 (기능 2·3·5·8)
+    // 사용 가능한 배터리 모드(없음 + 능력별 보조 모드). 강제 방전=어댑터 차단 능력, 외출 준비=충전 억제 능력.
+    private var availableOverrideModes: [BatteryMonitor.OverrideMode] {
+        var modes: [BatteryMonitor.OverrideMode] = [.none]
+        if monitor.isFeatureAvailable(.forceDischarge) { modes.append(.forceDischarge) }
+        if monitor.isFeatureAvailable(.tripPrep) { modes.append(.tripPrep) }
+        return modes
+    }
+
+    // MARK: 토글 (기능 2·3·5·8) — 각 토글을 의존 능력별로 노출(능력 미작동이면 그 토글만 숨김).
     private var togglesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Toggle("과열 보호(고온 시 충전·강제방전 중단)", isOn: $monitor.heatProtectionEnabled)
-            if monitor.heatProtectionEnabled {
-                HStack {
-                    Text("임계 온도").font(.subheadline)
-                    Spacer()
-                    Text("\(Int(monitor.heatCeiling))℃").monospacedDigit().foregroundStyle(.secondary)
-                }
-                Slider(value: $monitor.heatCeiling, in: HelperPolicy.Bounds.ceiling, step: 1)
-            }
-            Toggle("상한 도달까지 잠자기 억제", isOn: $monitor.inhibitSleepUntilLimit)
-            // 수면 중 충전: 기본은 "중단(현재 잔량 유지)" — 앱이 자는 동안 상한에서 못 멈추니 과충전 방지.
-            // 토글 ON(기본) = 중단·유지. OFF = 수면 중에도 상한까지 충전 허용(opt-in).
-            Toggle("수면 중 충전 중단(현재 잔량 유지)", isOn: Binding(
-                get: { !monitor.allowChargingWhileAsleep },
-                set: { monitor.allowChargingWhileAsleep = !$0 }
-            ))
-            // 배터리 모드 3택 셀렉터(없음 / 강제 방전 / 외출 준비) — 하나만 선택, 상호 배타를 구조로 보장.
-            Picker("배터리 모드", selection: Binding(
-                get: { monitor.overrideMode },
-                set: { monitor.overrideMode = $0 }
-            )) {
-                ForEach(BatteryMonitor.OverrideMode.allCases) { mode in
-                    Text(mode.label).font(.caption).tag(mode)   // 라벨 폰트 한 단계 축소
+            if monitor.isFeatureAvailable(.heatProtection) {
+                Toggle("과열 보호(고온 시 충전·강제방전 중단)", isOn: $monitor.heatProtectionEnabled)
+                if monitor.heatProtectionEnabled {
+                    HStack {
+                        Text("임계 온도").font(.subheadline)
+                        Spacer()
+                        Text("\(Int(monitor.heatCeiling))℃").monospacedDigit().foregroundStyle(.secondary)
+                    }
+                    Slider(value: $monitor.heatCeiling, in: HelperPolicy.Bounds.ceiling, step: 1)
                 }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .controlSize(.large)              // 높이 약간 키워 누르기 편하게(과하지 않게)
-            .frame(maxWidth: .infinity)       // 콘텐츠 폭 꽉 채움
+            if monitor.isFeatureAvailable(.sleepInhibit) {
+                Toggle("상한 도달까지 잠자기 억제", isOn: $monitor.inhibitSleepUntilLimit)
+            }
+            if monitor.isFeatureAvailable(.sleepChargeStop) {
+                // 수면 중 충전: 기본은 "중단(현재 잔량 유지)" — 앱이 자는 동안 상한에서 못 멈추니 과충전 방지.
+                // 토글 ON(기본) = 중단·유지. OFF = 수면 중에도 상한까지 충전 허용(opt-in).
+                Toggle("수면 중 충전 중단(현재 잔량 유지)", isOn: Binding(
+                    get: { !monitor.allowChargingWhileAsleep },
+                    set: { monitor.allowChargingWhileAsleep = !$0 }
+                ))
+            }
+            // 배터리 모드 셀렉터 — 사용 가능한 모드만 노출(없음 + 강제방전?(어댑터 차단) + 외출준비?(충전 억제)).
+            // 보조 모드가 하나도 없으면 셀렉터 자체를 숨긴다.
+            let modes = availableOverrideModes
+            if modes.count > 1 {
+                Picker("배터리 모드", selection: Binding(
+                    get: { monitor.overrideMode },
+                    set: { monitor.overrideMode = $0 }
+                )) {
+                    ForEach(modes) { mode in
+                        Text(mode.label).font(.caption).tag(mode)   // 라벨 폰트 한 단계 축소
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.large)              // 높이 약간 키워 누르기 편하게(과하지 않게)
+                .frame(maxWidth: .infinity)       // 콘텐츠 폭 꽉 채움
+            }
             if monitor.overrideMode == .forceDischarge, let target = monitor.forceDischargeTarget {
                 HStack {
                     Text("방전 목표").font(.subheadline)
