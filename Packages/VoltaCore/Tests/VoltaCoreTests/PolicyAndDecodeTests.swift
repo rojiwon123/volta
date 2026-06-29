@@ -446,6 +446,28 @@ import Testing
         let after = [r(charging: false, ac: true, batteryW: 0), r(charging: false, ac: true, batteryW: 0), r(charging: false, ac: true, batteryW: 0)]
         #expect(ControlEffectVerifier.judge(intent: .chargeInhibited, before: before, after: after) == .inconclusive)
     }
+
+    // ★ 회귀(false negative 버그): 상한 도달/유지 상태에서 OS isCharging 플래그가 true여도 **실전류 ~0**이면
+    // '실제 충전 아님' → 멈출 충전이 없으니 inconclusive여야 한다(notObserved로 잘못 강등 금지).
+    @Test func inconclusiveWhenHoldingAtLimitDespiteChargingFlag() {
+        let before = r(charging: true, ac: true, batteryW: 0)    // 플래그 true지만 watts≈0 = 유지
+        let after = [r(charging: true, ac: true, batteryW: 0),
+                     r(charging: true, ac: true, batteryW: 0),
+                     r(charging: true, ac: true, batteryW: 0)]
+        #expect(ControlEffectVerifier.judge(intent: .chargeInhibited, before: before, after: after) == .inconclusive)
+    }
+    // 실측 전력 우선: watts 양수면 충전, ~0이면 유지(플래그 무시). nil이면 플래그 폴백.
+    @Test func isChargingNowUsesActualWattsOverFlag() {
+        #expect(ControlEffectVerifier.isChargingNow(r(charging: true, ac: true, batteryW: 0)) == false)   // 유지
+        #expect(ControlEffectVerifier.isChargingNow(r(charging: false, ac: true, batteryW: 8)) == true)   // 실충전
+        #expect(ControlEffectVerifier.isChargingNow(BatteryReading(isCharging: true, isACPresent: true)) == true)  // watts nil → 플래그 폴백
+    }
+    // 전제조건 사유(진단/로그): 직전 충전 아님 → 사유 반환, 충전 중 → nil.
+    @Test func preconditionReasonForInhibit() {
+        #expect(ControlEffectVerifier.preconditionFailureReason(intent: .chargeInhibited, before: r(charging: true, ac: true, batteryW: 0)) != nil)
+        #expect(ControlEffectVerifier.preconditionFailureReason(intent: .chargeInhibited, before: r(charging: true, ac: true, batteryW: 9)) == nil)
+        #expect(ControlEffectVerifier.preconditionFailureReason(intent: .adapterDisabled, before: r(charging: false, ac: false, batteryW: -5)) == "AC 미연결")
+    }
     @Test func inconclusiveWhenUnpluggedForAdapterDisable() {
         let before = r(charging: false, ac: false, batteryW: -8)  // 이미 방전(언플러그)
         let after = [r(charging: false, ac: false, batteryW: -8), r(charging: false, ac: false, batteryW: -9), r(charging: false, ac: false, batteryW: -8)]

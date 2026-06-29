@@ -66,13 +66,32 @@ public enum ControlEffectVerifier {
     }
 
     /// 전력 임계(W). 이 미만 절대값은 "흐름 없음(유지)"으로 본다.
-    static let wattsEpsilon = 0.5
+    public static let wattsEpsilon = 0.5
 
-    static func isChargingNow(_ r: BatteryReading) -> Bool {
-        r.isCharging || ((r.power.batteryWatts ?? 0) > wattsEpsilon)
+    /// **실제 충전 중인지** — 배터리로 전류가 실제 유입(watts > +eps)될 때만 true.
+    /// OS `isCharging` 플래그는 **상한 도달/유지(bypass) 상태에서도 true**로 뜰 수 있고(실전류는 ~0),
+    /// 그걸 "충전 중"으로 보면 효과검증이 "멈출 충전이 없음"을 `notObserved`로 오판한다(충전 억제 미작동 오탐).
+    /// 그래서 실측 전력을 우선하고, 전력 미측정 기기(batteryWatts=nil)에서만 OS 플래그로 폴백한다.
+    public static func isChargingNow(_ r: BatteryReading) -> Bool {
+        if let w = r.power.batteryWatts { return w > wattsEpsilon }
+        return r.isCharging
     }
-    static func isDischargingNow(_ r: BatteryReading) -> Bool {
+    /// 실제 방전 중인지 — 배터리에서 전류가 빠져나갈(watts < -eps) 때만 true.
+    public static func isDischargingNow(_ r: BatteryReading) -> Bool {
         (r.power.batteryWatts ?? 0) < -wattsEpsilon
+    }
+
+    /// 효과검증 **전제조건** 미충족 사유(순수, 진단/로그용). nil이면 판정 가능(전제 충족).
+    /// judge 내부 가드와 동일 기준 — "효과를 관찰할 상황이 아니면" 실패(notObserved)로 단정하지 않고 보류한다.
+    public static func preconditionFailureReason(intent: ControlIntent, before: BatteryReading) -> String? {
+        switch intent {
+        case .chargeInhibited:
+            return isChargingNow(before) ? nil : "직전 실제 충전 아님(상한 유지/만충 등 — 멈출 충전 없음)"
+        case .adapterDisabled:
+            if !before.isACPresent { return "AC 미연결" }
+            if isDischargingNow(before) { return "직전 이미 방전(관찰 불가)" }
+            return nil
+        }
     }
 
     /// before(적용 직전) → after(정착 후 샘플들) 거동 변화를 판정한다(순수).

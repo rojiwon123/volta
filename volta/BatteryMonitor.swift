@@ -404,9 +404,12 @@ final class BatteryMonitor {
         }
         let afterStr = after.map(f).joined(separator: " | ")
         let eff = effect.map { String(describing: $0) } ?? "-"
+        // 전제조건 사유(예: inconclusive(직전 실제 충전 아님)) — false negative 추적용.
+        let pre = ControlEffectVerifier.preconditionFailureReason(intent: intent, before: before) ?? "ok"
         verifyLog.notice("""
             [verify] intent=\(String(describing: intent), privacy: .public) decision=\(decision, privacy: .public) \
-            effect=\(eff, privacy: .public) before[\(f(before), privacy: .public)] after[\(afterStr, privacy: .public)]
+            effect=\(eff, privacy: .public) pre=\(pre, privacy: .public) \
+            before[\(f(before), privacy: .public)] after[\(afterStr, privacy: .public)]
             """)
     }
 
